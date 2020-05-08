@@ -15,6 +15,7 @@ func main() {
 	fieldsParameter := flag.String("f", "", "Choose field to print")
 	charParameter := flag.String("c", "", "Choose characters to print")
 	delimitParameter := flag.String("d", "", "Choose a separator")
+	onlyDelimitParameter := flag.Bool("s", false, "Suppress lines with no field delimiter characters. Unless specified, lines with no delimiters are passed through unmodified.")
 	flag.Parse()
 
 	if *fieldsParameter != "" && *charParameter != "" {
@@ -114,6 +115,9 @@ func main() {
 
 	for i := 0; i < lineCounter; i++ {
 		lineLength := len(parameterBasedData[i])
+		if lineLength < 2 && *onlyDelimitParameter {
+			continue
+		}
 		var output []string
 		for j := range input {
 			for _, k := range inputAsInt[j] {
