@@ -16,6 +16,7 @@ func main() {
 	fieldsParameter := flag.String("f", "", "Choose field to print")
 	charParameter := flag.String("c", "", "Choose characters to print")
 	delimitParameter := flag.String("d", "", "Choose a separator")
+	onlyDelimitParameter := flag.Bool("s", false, "Suppress lines with no field delimiter characters. Unless specified, lines with no delimiters are passed through unmodified.")
 	flag.Parse()
 
 	if (*fieldsParameter != "") == (*charParameter != "") {
@@ -23,6 +24,9 @@ func main() {
 		os.Exit(1)
 	} else if *charParameter != "" && *delimitParameter != "" {
 		fmt.Fprintln(os.Stderr, "cut: an input delimiter may be specified only when operating on fields")
+		os.Exit(1)
+	} else if *charParameter != "" && *onlyDelimitParameter {
+		fmt.Fprintln(os.Stderr, "cut: suppressing non-delimited lines makes sense\n\tonly when operating on fields")
 		os.Exit(1)
 	}
 
@@ -76,26 +80,29 @@ func main() {
 		}
 
 		contentLineSplit := bytes.Split(content, []byte{'\n'})
-		data = bytes.Split(contentLineSplit[0], delimiter)
 
-		lineLength := len(data)
-		var output [][]byte
+		if !*onlyDelimitParameter || bytes.Contains(contentLineSplit[0], delimiter) {
+			data = bytes.Split(contentLineSplit[0], delimiter)
 
-		for j := range input {
-			for _, k := range inputAsInt[j] {
-				if k > lineLength {
-					break
+			lineLength := len(data)
+			var output [][]byte
+
+			for j := range input {
+				for _, k := range inputAsInt[j] {
+					if k > lineLength {
+						break
+					}
+					output = append(output, data[k-1])
 				}
-				output = append(output, data[k-1])
 			}
-		}
 
-		contentLineSplit[0] = bytes.Join(output, delimiter)
+			contentLineSplit[0] = bytes.Join(output, delimiter)
 
-		_, _ = os.Stdout.Write(bytes.Join(contentLineSplit, []byte{'\n'}))
+			_, _ = os.Stdout.Write(bytes.Join(contentLineSplit, []byte{'\n'}))
 
-		if readAllErr == io.EOF {
-			break
+			if readAllErr == io.EOF {
+				break
+			}
 		}
 	}
 }
