@@ -13,7 +13,13 @@ import (
 
 func main() {
 	fieldsParameter := flag.String("f", "", "Choose field to print")
+	charParameter := flag.String("c", "", "Choose characters to print")
 	flag.Parse()
+
+	if *fieldsParameter != "" && *charParameter != "" {
+		fmt.Println("cut: only one type of list may be specified.")
+		os.Exit(1)
+	}
 
 	content, readAllErr := ioutil.ReadAll(os.Stdin)
 	if readAllErr != nil {
@@ -25,7 +31,15 @@ func main() {
 		return
 	}
 
-	input := strings.Split(*fieldsParameter, ",")
+	var chosenParameter string
+
+	if *charParameter != "" {
+		chosenParameter = *charParameter
+	} else {
+		chosenParameter = *fieldsParameter
+	}
+
+	input := strings.Split(chosenParameter, ",")
 	inputAsInt := make([][]int, len(input))
 
 	for i := range input {
@@ -52,22 +66,43 @@ func main() {
 	var data, parameterBasedData [][][]byte
 	var lineCounter int
 	delimiter := []byte{9}
+	charCheck := false
 
-	// Fieldparameter
-	contentLineSplit := bytes.Split(content, []byte{'\n'})
-	data = make([][][]byte, len(contentLineSplit))
+	if *fieldsParameter != "" {
+		// Fieldparameter
+		contentLineSplit := bytes.Split(content, []byte{'\n'})
+		data = make([][][]byte, len(contentLineSplit))
 
-	for i := 0; i < len(contentLineSplit); i++ {
-		data[i] = bytes.Split(contentLineSplit[i], delimiter)
+		lineCounter = len(data) - 1
+
+		for i := 0; i < len(contentLineSplit); i++ {
+			data[i] = bytes.Split(contentLineSplit[i], delimiter)
+		}
+
+		if len(data[lineCounter][0]) > 0 {
+			lineCounter = len(data)
+		}
+
+		parameterBasedData = data
+	} else if *charParameter != "" {
+		// Charparameter
+		contentCharSplit := bytes.Split(content, []byte("\n"))
+
+		dataCharSplit := make([][][]byte, len(contentCharSplit))
+
+		for i := 0; i < len(contentCharSplit); i++ {
+			dataCharSplit[i] = bytes.Split(contentCharSplit[i], []byte(""))
+		}
+
+		lineCounter = len(dataCharSplit) - 1
+
+		if len(dataCharSplit[lineCounter]) > 0 {
+			lineCounter = len(dataCharSplit)
+		}
+
+		charCheck = true
+		parameterBasedData = dataCharSplit
 	}
-
-	lineCounter = len(data) - 1
-
-	if len(data[lineCounter][0]) > 0 {
-		lineCounter = len(data)
-	}
-
-	parameterBasedData = data
 
 	for i := 0; i < lineCounter; i++ {
 		lineLength := len(parameterBasedData[i])
@@ -77,9 +112,17 @@ func main() {
 				if k > lineLength {
 					break
 				}
-				output = append(output, string(parameterBasedData[i][k-1]))
+				if !charCheck {
+					output = append(output, string(parameterBasedData[i][k-1]))
+				} else {
+					fmt.Printf("%s", parameterBasedData[i][k-1])
+				}
 			}
 		}
-		fmt.Println(strings.Join(output, string(delimiter)))
+		if !charCheck {
+			fmt.Println(strings.Join(output, string(delimiter)))
+		} else {
+			fmt.Printf("\n")
+		}
 	}
 }
