@@ -14,10 +14,14 @@ import (
 func main() {
 	fieldsParameter := flag.String("f", "", "Choose field to print")
 	charParameter := flag.String("c", "", "Choose characters to print")
+	delimitParameter := flag.String("d", "", "Choose a separator")
 	flag.Parse()
 
 	if *fieldsParameter != "" && *charParameter != "" {
 		fmt.Println("cut: only one type of list may be specified.")
+		os.Exit(1)
+	} else if *charParameter != "" && *delimitParameter != "" {
+		fmt.Println("cut: an input delimiter may be specified only when operating on fields")
 		os.Exit(1)
 	}
 
@@ -65,8 +69,12 @@ func main() {
 
 	var data, parameterBasedData [][][]byte
 	var lineCounter int
-	delimiter := []byte{9}
 	charCheck := false
+	delimiter := []byte{9}
+
+	if *delimitParameter != "" {
+		delimiter = []byte(*delimitParameter)
+	}
 
 	if *fieldsParameter != "" {
 		// Fieldparameter
