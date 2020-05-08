@@ -14,9 +14,23 @@ import (
 
 func main() {
 	fieldsParameter := flag.String("f", "", "Choose field to print")
+	charParameter := flag.String("c", "", "Choose characters to print")
 	flag.Parse()
 
-	input := strings.Split(*fieldsParameter, ",")
+	if (*fieldsParameter != "") == (*charParameter != "") {
+		fmt.Fprintln(os.Stderr, "cut: only one type of list may be specified.")
+		os.Exit(1)
+	}
+
+	var chosenParameter string
+
+	if *charParameter != "" {
+		chosenParameter = *charParameter
+	} else {
+		chosenParameter = *fieldsParameter
+	}
+
+	input := strings.Split(chosenParameter, ",")
 	inputAsInt := make([][]int, len(input))
 
 	for i := range input {
@@ -43,6 +57,10 @@ func main() {
 	buf := bufio.NewReader(os.Stdin)
 	var data [][]byte
 	delimiter := []byte{9}
+
+	if *charParameter != "" {
+		delimiter = []byte{}
+	}
 
 	for {
 		content, readAllErr := buf.ReadBytes('\n')
